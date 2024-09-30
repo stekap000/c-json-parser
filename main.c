@@ -1,34 +1,38 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 
-typedef unsigned char u8;
+// TODO: Change this to header file after its creation.
+#include "json_parser.c"
 
-typedef enum token_type {
-	Token_Number,
-	Token_String,
-	Token_Array,
-	Token_True,
-	Token_False,
-	Token_Null,
-	Token_Colon,
-	Token_Comma,
-	Token_Open_Brace,
-	Token_Closed_Brace,
-	Token_Open_Bracket,
-	Token_Closed_Bracket,
+Buffer read_entire_file(char* filename) {
+	Buffer buffer = {};
 
-	Token_Error,
-	Token_End_Of_Stream,
-	
-	Token_Count
-} Token_Type;
+	FILE* file = fopen(filename, "rb");
+	if(!file) {
+		fprintf(stderr, "Error opening file.\n");
+		return buffer;
+	}
 
-typedef struct json_token {
-	Token_Type type;
-	// Value
-} JSON_Token;
+	fseek(file, 0, SEEK_END);
+	buffer.size = ftell(file);
+	buffer.data = malloc(buffer.size);
+	fseek(file, 0, SEEK_SET);
+
+	if(fread(buffer.data, 1, buffer.size, file) != buffer.size) {
+		fprintf(stderr, "Error reading file.\n");
+		fclose(file);
+		return buffer;
+	}
+
+	fclose(file);
+	return buffer;
+}
 
 int main() {
-	printf("Init\n");
+	Buffer json_buffer = read_entire_file("test.json");
+
+	
 	
 	return 0;
 }
