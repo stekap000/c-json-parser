@@ -18,6 +18,10 @@ typedef struct buffer {
 	u8* data;
 } Buffer;
 
+b32 is_in_bounds(Buffer buffer, u64 index) {
+	return (index < buffer.size);
+}
+
 typedef enum token_type {
 	Token_Number,
 	Token_String,
@@ -54,23 +58,34 @@ typedef struct {
 	struct JSON_Node* next_sibling;
 } JSON_Node;
 
-b32 valid_parser_position(JSON_Parser* parser) {
-	return (parser->at < parser->source.size);
+b32 is_json_white_space(u8 c) {
+	return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
 }
 
 void skip_white_space(JSON_Parser* parser) {
 	u8* data = parser->source.data;
-	u64 at = parser->at;
 
-	while(valid_parser_position(parser) && data[at] == ' ' && data[at] == '\t' && data[at] == '\n' && data[at] == '\r') {
+	while(is_in_bounds(parser->source, parser->at) && is_json_white_space(data[parser->at])) {
 		parser->at++;
 	}
 }
 
 JSON_Token JSON_next_token(JSON_Parser* parser) {
+	JSON_Token token = {};
+	token.type = Token_Error;
+	
 	skip_white_space(parser);
 
+	Buffer source = parser->source;
+
+	switch(source.data[parser->at++]) {
+		case ':': { token.type = Token_Colon; } break;
+		case ',': { token.type = Token_Comma; } break;
+		case '{': { token.type = Token_Open_Brace; } break;
+		case '}': { token.type = Token_Closed_Brace; } break;
+		case '[': { token.type = Token_Open_Bracket; } break;
+		case ']': { token.type = Token_Closed_Bracket; } break;
+	}
 	
-	
-	return (JSON_Token){};
+	return token;
 }

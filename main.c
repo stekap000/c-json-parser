@@ -31,8 +31,10 @@ Buffer read_entire_file(char* filename) {
 
 int main() {
 	Buffer json_buffer = read_entire_file("test.json");
-
 	
+	JSON_Parser parser = {json_buffer, 0};
+	JSON_Token token = JSON_next_token(&parser);
+	printf("Type: %d\n", token.type);
 	
 	return 0;
 }
