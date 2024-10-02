@@ -78,13 +78,37 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 
 	Buffer source = parser->source;
 
-	switch(source.data[parser->at++]) {
-		case ':': { token.type = Token_Colon; } break;
-		case ',': { token.type = Token_Comma; } break;
-		case '{': { token.type = Token_Open_Brace; } break;
-		case '}': { token.type = Token_Closed_Brace; } break;
-		case '[': { token.type = Token_Open_Bracket; } break;
-		case ']': { token.type = Token_Closed_Bracket; } break;
+	if(is_in_bounds(source, parser->at)) {
+		switch(source.data[parser->at++]) {
+			case ':': { token.type = Token_Colon; } break;
+			case ',': { token.type = Token_Comma; } break;
+			case '{': { token.type = Token_Open_Brace; } break;
+			case '}': { token.type = Token_Closed_Brace; } break;
+			case '[': { token.type = Token_Open_Bracket; } break;
+			case ']': { token.type = Token_Closed_Bracket; } break;
+
+			case '"': {
+				token.value.data = source.data + parser->at;
+
+				// TODO: Handle the case where string token will contain \" instead of
+				// just ", when there is an escaped quote within the string.
+				// Maybe here, or maybe later, when the string value is used.
+
+				// TODO: Check the bound in this loop.
+
+				// Loop until the end of the string and skip over quotes that are escaped.
+				// Also handles the case \\", where there is effective no quote escape.
+				while(source.data[parser->at] != '"' || (source.data[parser->at - 1] == '\\' && source.data[parser->at - 2] != '\\')) {
+					++parser->at;
+				}
+
+				token.value.size = (source.data + parser->at) - token.value.data;
+				token.type = Token_String;
+			} break;
+		}
+	}
+	else {
+		fprintf(stderr, "Error accessing source data at invalid index.\n");
 	}
 	
 	return token;

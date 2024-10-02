@@ -35,6 +35,12 @@ int main() {
 	JSON_Parser parser = {json_buffer, 0};
 	JSON_Token token = JSON_next_token(&parser);
 	printf("Type: %d\n", token.type);
+	token = JSON_next_token(&parser);
+	printf("Type: %d\n", token.type);
+	for(int i = 0; i < token.value.size; ++i) {
+		printf("%c", token.value.data[i]);
+	}
+	
 	
 	return 0;
 }
