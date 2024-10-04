@@ -1,3 +1,8 @@
+// TODO: Maybe later add the ability to continue parsing even when the error is encountered by
+//       assuming that the last token was invalid and finding first valid token. This way, we
+//       can give information about more than one error (if there is more than one), instead
+//       of just one.
+
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
@@ -62,7 +67,7 @@ b32 is_json_white_space(u8 c) {
 	return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
 }
 
-void skip_white_space(JSON_Parser* parser) {
+void parser_skip_white_space(JSON_Parser* parser) {
 	u8* data = parser->source.data;
 
 	while(is_in_bounds(parser->source, parser->at) && is_json_white_space(data[parser->at])) {
@@ -70,11 +75,24 @@ void skip_white_space(JSON_Parser* parser) {
 	}
 }
 
+b32 parser_expect_characters(JSON_Parser* parser, char* expected) {
+	while(*expected) {
+		if(*expected != parser->source.data[parser->at]) {
+			break;
+		}
+		
+		++expected;
+		++parser->at;
+	}
+
+	return !(*expected);
+}
+
 JSON_Token JSON_next_token(JSON_Parser* parser) {
 	JSON_Token token = {};
 	token.type = Token_Error;
 	
-	skip_white_space(parser);
+	parser_skip_white_space(parser);
 
 	Buffer source = parser->source;
 
@@ -87,6 +105,10 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 			case '[': { token.type = Token_Open_Bracket; } break;
 			case ']': { token.type = Token_Closed_Bracket; } break;
 
+			case 't': { if(parser_expect_characters(parser, "rue")) token.type = Token_True; } break;
+			case 'f': { if(parser_expect_characters(parser, "alse")) token.type = Token_False; } break;
+			case 'n': { if(parser_expect_characters(parser, "ull")) token.type = Token_Null; } break;
+
 			case '"': {
 				token.value.data = source.data + parser->at;
 
@@ -97,16 +119,24 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 				// Also handles the case \\", where there is effectively no quote escape.
 				JSON_Token_Type string_or_error_type = Token_Error;
 				while(1) {
-					if(!is_in_bounds(source, parser->at)) break;
+					if(!is_in_bounds(source, parser->at)) {
+						break;
+					}
 
 					if(source.data[parser->at] == '"') {
-						if(!is_in_bounds(source, parser->at - 1)) break;
+						if(!is_in_bounds(source, parser->at - 1)) {
+							break;
+						}
+						
 						if(source.data[parser->at - 1] != '\\') {
 							string_or_error_type = Token_String;
 							break;
 						}
 
-						if(!is_in_bounds(source, parser->at - 2)) break;
+						if(!is_in_bounds(source, parser->at - 2)) {
+							break;
+						}
+						
 						if(source.data[parser->at - 2] == '\\') {
 							string_or_error_type = Token_String;
 							break;
