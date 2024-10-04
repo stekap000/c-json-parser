@@ -90,20 +90,34 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 			case '"': {
 				token.value.data = source.data + parser->at;
 
-				// TODO: Handle the case where string token will contain \" instead of
-				// just ", when there is an escaped quote within the string.
-				// Maybe here, or maybe later, when the string value is used.
+				// At this point, we leave \" and other special characters without
+				// converting them to their byte values.
+				
+				// Loops until the end of the string and skips over quotes that are escaped.
+				// Also handles the case \\", where there is effectively no quote escape.
+				JSON_Token_Type string_or_error_type = Token_Error;
+				while(1) {
+					if(!is_in_bounds(source, parser->at)) break;
 
-				// TODO: Check the bound in this loop.
+					if(source.data[parser->at] == '"') {
+						if(!is_in_bounds(source, parser->at - 1)) break;
+						if(source.data[parser->at - 1] != '\\') {
+							string_or_error_type = Token_String;
+							break;
+						}
 
-				// Loop until the end of the string and skip over quotes that are escaped.
-				// Also handles the case \\", where there is effective no quote escape.
-				while(source.data[parser->at] != '"' || (source.data[parser->at - 1] == '\\' && source.data[parser->at - 2] != '\\')) {
+						if(!is_in_bounds(source, parser->at - 2)) break;
+						if(source.data[parser->at - 2] == '\\') {
+							string_or_error_type = Token_String;
+							break;
+						}
+					}
+
 					++parser->at;
 				}
 
 				token.value.size = (source.data + parser->at) - token.value.data;
-				token.type = Token_String;
+				token.type = string_or_error_type;
 			} break;
 		}
 	}
