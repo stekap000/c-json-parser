@@ -30,7 +30,6 @@ b32 is_in_bounds(Buffer buffer, u64 index) {
 typedef enum token_type {
 	Token_Number,
 	Token_String,
-	Token_Array,
 	Token_True,
 	Token_False,
 	Token_Null,
@@ -67,6 +66,10 @@ b32 is_json_white_space(u8 c) {
 	return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
 }
 
+b32 is_ascii_digit(u8 c) {
+	return (c >= '0' && c <= '9');
+}
+
 void parser_skip_white_space(JSON_Parser* parser) {
 	u8* data = parser->source.data;
 
@@ -75,7 +78,7 @@ void parser_skip_white_space(JSON_Parser* parser) {
 	}
 }
 
-b32 parser_expect_characters(JSON_Parser* parser, char* expected) {
+b32 parser_expect_characters(JSON_Parser* parser, s8* expected) {
 	while(*expected) {
 		if(*expected != parser->source.data[parser->at]) {
 			break;
@@ -108,7 +111,7 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 			case 't': { if(parser_expect_characters(parser, "rue")) token.type = Token_True; } break;
 			case 'f': { if(parser_expect_characters(parser, "alse")) token.type = Token_False; } break;
 			case 'n': { if(parser_expect_characters(parser, "ull")) token.type = Token_Null; } break;
-
+				
 			case '"': {
 				token.value.data = source.data + parser->at;
 
@@ -149,6 +152,28 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 				token.value.size = (source.data + parser->at) - token.value.data;
 				token.type = string_or_error_type;
 			} break;
+
+			// TODO: Handle all number format and not just whole, positive numbers.
+				
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9': {
+				// -1 in order to also include matched case digit into the final number.
+				token.value.data = source.data + parser->at - 1;
+				
+				while(is_ascii_digit(source.data[parser->at])) {
+					++parser->at;
+				}
+
+				token.value.size = (source.data + parser->at) - token.value.data;
+				token.type = Token_Number;
+			}
 		}
 	}
 	else {

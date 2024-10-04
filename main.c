@@ -38,7 +38,7 @@ int main() {
 	token = JSON_next_token(&parser);
 	printf("Type: %d\n", token.type);
 	
-	if(token.type == Token_String) {
+	if(token.type == Token_String || token.type == Token_Number) {
 		for(int i = 0; i < token.value.size; ++i) {
 			printf("%c", token.value.data[i]);
 		}
