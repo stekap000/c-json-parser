@@ -96,6 +96,14 @@ b32 parser_look_character(JSON_Parser* parser, s8 c) {
 	return 0;
 }
 
+b32 parser_look_back_character(JSON_Parser* parser, s8 c) {
+	if(parser->source.data[parser->at - 1] == c) {
+		return 1;
+	}
+
+	return 0;
+}
+
 b32 parser_match_characters(JSON_Parser* parser, s8* expected) {
 	while(*expected) {
 		if(is_in_bounds(parser->source, parser->at) && *expected != parser->source.data[parser->at]) {
@@ -183,27 +191,8 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 				++parser->at;
 			} break;
 
-			case '-': {
-				// NOTE: Maybe change this so that there is no recursive call.
-				token.value.data = source.data + parser->at - 1;
-				JSON_Token temp_token = JSON_next_token(parser);
-				if(temp_token.type == Token_Number) {
-					token.value.size = temp_token.value.size + 1;
-					token.type = Token_Number;
-				}
-			} break;
-
-			case '0': {
-				token.value.data = source.data + parser->at - 1;
-				
-				if(parser_match_character(parser, '.')) {
-					parser_match_digits(parser);
-				}
-				
-				token.value.size = (source.data + parser->at) - token.value.data;
-				token.type = Token_Number;
-			} break;
-				
+			case '-':
+			case '0':
 			case '1':
 			case '2':
 			case '3':
@@ -215,8 +204,17 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 			case '9': {
 				// -1 in order to also include matched case digit into the final number.
 				token.value.data = source.data + parser->at - 1;
-				
-				parser_match_digits(parser);
+
+				// If it is not '-0' or '0', then try to match digits.
+				if(!(parser_look_back_character(parser, '-') && parser_look_character(parser, '0')) && !parser_look_back_character(parser, '0')) {
+					parser_match_digits(parser);
+				}
+
+				// This handles the case where we have '-0' or something like '000000'.
+				if(!parser_look_back_character(parser, '0')) {
+					parser_match_character(parser, '0');
+				}
+
 				if(parser_match_character(parser, '.')) {
 					if(!parser_match_digits(parser)) {
 						--parser->at;
@@ -238,8 +236,11 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 					}
 				}
 
-				token.value.size = (source.data + parser->at) - token.value.data;
-				token.type = Token_Number;
+				// If we didn't just match '-', but a valid number with/without '-'.
+				if(!parser_look_back_character(parser, '-')) {
+					token.value.size = (source.data + parser->at) - token.value.data;
+					token.type = Token_Number;
+				}
 			}
 		}
 	}
