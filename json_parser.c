@@ -4,6 +4,15 @@
 //       of just one. This can easily be implemented by just returning error tokens when
 //       there is an error, and continuing tokenization from there.
 
+// TODO: First, parsing will be done with lazy evaluation, so that the value of some node is
+//       calculated only when user requests it. Later also add immediate evaluation during parsing
+//       just that all nodes have ready value when is is requested.
+
+// TODO: One thing to keep in mind is that tokenization buffers that holds token bytes are just
+//       pointers with attached size that point somewhere in json bytes. This leads to undefined
+//       behaviour if json bytes somehow become invalid memory. It is faster, but requires this
+//       knowledge. Consider adding the option where tokenization buffers are explicitly allocated.
+
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
@@ -55,10 +64,13 @@ typedef struct json_token {
 typedef struct {
 	Buffer source;
 	u64 at;
+	u32 error_encountered;
 } JSON_Parser;
 
 typedef struct {
-	JSON_Token token;
+	// TODO: This could change a bit with immediate evaluation.
+	Buffer label;
+	Buffer value;
 	struct JSON_Node* first_child;
 	struct JSON_Node* next_sibling;
 } JSON_Node;
@@ -216,6 +228,8 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 				}
 
 				if(parser_match_character(parser, '.')) {
+					// If there are no digits at all after '.', then we go back one place, thus tokenizing
+					// what is before '.'.
 					if(!parser_match_digits(parser)) {
 						--parser->at;
 					}
@@ -250,3 +264,46 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 	
 	return token;
 }
+
+JSON_Node* JSON_parse_node(JSON_Parser* parser) {
+	JSON_Node* node = malloc(sizeof(JSON_Node));
+	
+	JSON_Token token = JSON_next_token(parser);
+
+	if(token.type == Token_Open_Brace) {
+		Buffer label = {};
+		Buffer value = {};
+		while(is_in_bounds(parser->source, parser->at) && !parser->error_encountered) {
+			token = JSON_next_token(parser);
+
+			if(token.type == Token_String) {
+				label = token.value;
+
+				token = JSON_next_token(parser);
+
+				if(token.type != Token_Comma) {
+					parser->error_encountered = 1;
+				}
+			}
+			else {
+				parser->error_encountered = 1;
+				// TODO: Add some more information about error.
+			}
+
+			JSON_Node* subnode = JSON_parse_node(parser);
+		}
+	}
+	else if(token.type == Token_Open_Bracket) {
+
+	}
+
+	return node;
+}
+
+JSON_Node* JSON_parse(Buffer json) {
+	JSON_Parser parser = {};
+	parser.source = json;
+
+	return JSON_parse_node(&parser);
+}
+
