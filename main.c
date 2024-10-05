@@ -69,18 +69,20 @@ b32 read_and_print_token(JSON_Parser* parser) {
 }
 
 int main() {
-	// Buffer json_buffer = read_entire_file("test.json");
+#if 1
+	Buffer json_buffer = read_entire_file("test.json");
 	
-	// JSON_Parser parser = {json_buffer, 0};
-	// u32 number_of_tokens_to_read = 20;
+	JSON_Parser parser = {json_buffer, 0};
+	u32 number_of_tokens_to_read = 20;
 	
-	// for(int i = 0; i < number_of_tokens_to_read; ++i) {
-	// 	read_and_print_token(&parser);
-	// }
-
+	for(int i = 0; i < number_of_tokens_to_read; ++i) {
+		read_and_print_token(&parser);
+	}
+#else
 	Buffer json_buffer = read_entire_file("net_example.json");
 	JSON_Parser parser = {json_buffer, 0};
 	while(read_and_print_token(&parser));
+#endif
 	
 	return 0;
 }

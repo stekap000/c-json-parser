@@ -79,9 +79,26 @@ void parser_skip_white_space(JSON_Parser* parser) {
 	}
 }
 
+b32 parser_match_character(JSON_Parser* parser, s8 c) {
+	if(is_in_bounds(parser->source, parser->at) && parser->source.data[parser->at] == c) {
+		++parser->at;
+		return 1;
+	}
+
+	return 0;
+}
+
+b32 parser_look_character(JSON_Parser* parser, s8 c) {
+	if(is_in_bounds(parser->source, parser->at) && parser->source.data[parser->at] == c) {
+		return 1;
+	}
+
+	return 0;
+}
+
 b32 parser_match_characters(JSON_Parser* parser, s8* expected) {
 	while(*expected) {
-		if(*expected != parser->source.data[parser->at]) {
+		if(is_in_bounds(parser->source, parser->at) && *expected != parser->source.data[parser->at]) {
 			break;
 		}
 		
@@ -92,10 +109,13 @@ b32 parser_match_characters(JSON_Parser* parser, s8* expected) {
 	return !(*expected);
 }
 
-void parser_match_digits(JSON_Parser* parser) {
+b32 parser_match_digits(JSON_Parser* parser) {
+	b32 at_least_one_digit_found = 0;
 	while(is_ascii_digit(parser->source.data[parser->at])) {
 		++parser->at;
+		++at_least_one_digit_found;
 	}
+	return at_least_one_digit_found;
 }
 
 JSON_Token JSON_next_token(JSON_Parser* parser) {
@@ -176,12 +196,12 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 			case '0': {
 				token.value.data = source.data + parser->at - 1;
 				
-				if(parser_match_characters(parser, ".")) {
+				if(parser_match_character(parser, '.')) {
 					parser_match_digits(parser);
-					
-					token.value.size = (source.data + parser->at) - token.value.data;
-					token.type = Token_Number;
 				}
+				
+				token.value.size = (source.data + parser->at) - token.value.data;
+				token.type = Token_Number;
 			} break;
 				
 			case '1':
@@ -197,9 +217,26 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 				token.value.data = source.data + parser->at - 1;
 				
 				parser_match_digits(parser);
-				if(parser_match_characters(parser, ".")) {
-					parser_match_digits(parser);
-				};
+				if(parser_match_character(parser, '.')) {
+					if(!parser_match_digits(parser)) {
+						--parser->at;
+					}
+				}
+				
+				if(parser_match_character(parser, 'e') || parser_match_character(parser, 'E')) {
+					if(parser_look_character(parser, '+') || parser_look_character(parser, '-')) {
+						++parser->at;
+					}
+
+					// If no digits are matched after 'e' or 'e[+/-]', then move back to the number
+					// before 'e'.
+					if(!parser_match_digits(parser)) {
+						--parser->at;
+						if(parser_look_character(parser, '+') || parser_look_character(parser, '-')) {
+							--parser->at;
+						}
+					}
+				}
 
 				token.value.size = (source.data + parser->at) - token.value.data;
 				token.type = Token_Number;
