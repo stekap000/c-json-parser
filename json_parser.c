@@ -1,7 +1,8 @@
 // TODO: Maybe later add the ability to continue parsing even when the error is encountered by
 //       assuming that the last token was invalid and finding first valid token. This way, we
 //       can give information about more than one error (if there is more than one), instead
-//       of just one.
+//       of just one. This can easily be implemented by just returning error tokens when
+//       there is an error, and continuing tokenization from there.
 
 typedef unsigned char u8;
 typedef unsigned short u16;
@@ -78,7 +79,7 @@ void parser_skip_white_space(JSON_Parser* parser) {
 	}
 }
 
-b32 parser_expect_characters(JSON_Parser* parser, s8* expected) {
+b32 parser_match_characters(JSON_Parser* parser, s8* expected) {
 	while(*expected) {
 		if(*expected != parser->source.data[parser->at]) {
 			break;
@@ -91,6 +92,12 @@ b32 parser_expect_characters(JSON_Parser* parser, s8* expected) {
 	return !(*expected);
 }
 
+void parser_match_digits(JSON_Parser* parser) {
+	while(is_ascii_digit(parser->source.data[parser->at])) {
+		++parser->at;
+	}
+}
+
 JSON_Token JSON_next_token(JSON_Parser* parser) {
 	JSON_Token token = {};
 	token.type = Token_Error;
@@ -98,7 +105,7 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 	parser_skip_white_space(parser);
 
 	Buffer source = parser->source;
-
+	
 	if(is_in_bounds(source, parser->at)) {
 		switch(source.data[parser->at++]) {
 			case ':': { token.type = Token_Colon; } break;
@@ -108,9 +115,9 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 			case '[': { token.type = Token_Open_Bracket; } break;
 			case ']': { token.type = Token_Closed_Bracket; } break;
 
-			case 't': { if(parser_expect_characters(parser, "rue")) token.type = Token_True; } break;
-			case 'f': { if(parser_expect_characters(parser, "alse")) token.type = Token_False; } break;
-			case 'n': { if(parser_expect_characters(parser, "ull")) token.type = Token_Null; } break;
+			case 't': { if(parser_match_characters(parser, "rue")) token.type = Token_True; } break;
+			case 'f': { if(parser_match_characters(parser, "alse")) token.type = Token_False; } break;
+			case 'n': { if(parser_match_characters(parser, "ull")) token.type = Token_Null; } break;
 				
 			case '"': {
 				token.value.data = source.data + parser->at;
@@ -151,9 +158,31 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 
 				token.value.size = (source.data + parser->at) - token.value.data;
 				token.type = string_or_error_type;
+
+				// Handles the case where break happens and increment in loop is skipped.
+				++parser->at;
 			} break;
 
-			// TODO: Handle all number format and not just whole, positive numbers.
+			case '-': {
+				// NOTE: Maybe change this so that there is no recursive call.
+				token.value.data = source.data + parser->at - 1;
+				JSON_Token temp_token = JSON_next_token(parser);
+				if(temp_token.type == Token_Number) {
+					token.value.size = temp_token.value.size + 1;
+					token.type = Token_Number;
+				}
+			} break;
+
+			case '0': {
+				token.value.data = source.data + parser->at - 1;
+				
+				if(parser_match_characters(parser, ".")) {
+					parser_match_digits(parser);
+					
+					token.value.size = (source.data + parser->at) - token.value.data;
+					token.type = Token_Number;
+				}
+			} break;
 				
 			case '1':
 			case '2':
@@ -167,9 +196,10 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 				// -1 in order to also include matched case digit into the final number.
 				token.value.data = source.data + parser->at - 1;
 				
-				while(is_ascii_digit(source.data[parser->at])) {
-					++parser->at;
-				}
+				parser_match_digits(parser);
+				if(parser_match_characters(parser, ".")) {
+					parser_match_digits(parser);
+				};
 
 				token.value.size = (source.data + parser->at) - token.value.data;
 				token.type = Token_Number;
@@ -177,7 +207,7 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 		}
 	}
 	else {
-		fprintf(stderr, "Error accessing source data at invalid index.\n");
+		token.type = Token_End_Of_Stream;
 	}
 	
 	return token;
