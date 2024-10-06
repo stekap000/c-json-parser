@@ -265,37 +265,57 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 	return token;
 }
 
-JSON_Node* JSON_parse_node(JSON_Parser* parser) {
+JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 	JSON_Node* node = malloc(sizeof(JSON_Node));
 	
 	JSON_Token token = JSON_next_token(parser);
+	
+	switch(token.type) {
+		case Token_Open_Brace: {
 
-	if(token.type == Token_Open_Brace) {
-		Buffer label = {};
-		Buffer value = {};
-		while(is_in_bounds(parser->source, parser->at) && !parser->error_encountered) {
-			token = JSON_next_token(parser);
-
-			if(token.type == Token_String) {
-				label = token.value;
-
+			while(is_in_bounds(parser->source, parser->at) && !parser->error_encountered) {
 				token = JSON_next_token(parser);
 
-				if(token.type != Token_Comma) {
+				if(token.type == Token_String) {
+					node->label = token.value;
+
+					token = JSON_next_token(parser);
+
+					if(token.type != Token_Colon) {
+						parser->error_encountered = 1;
+					}
+				}
+				else {
 					parser->error_encountered = 1;
 				}
-			}
-			else {
-				parser->error_encountered = 1;
-				// TODO: Add some more information about error.
-			}
 
-			JSON_Node* subnode = JSON_parse_node(parser);
+				JSON_Node* subnode = JSON_parse_node(parser, node);
+			}
+		} break;
+
+		case Token_Open_Bracket: {
+
+		} break;
+
+		case Token_Number:
+		case Token_String:
+		case Token_True:
+		case Token_False:
+		case Token_Null: {
+			parent_node->value = token.value;
+		} break;
+
+		default: {
+			parser->error_encountered = 1;
 		}
 	}
-	else if(token.type == Token_Open_Bracket) {
 
-	}
+	// NOT YET USED
+	// Token_Comma,
+	// Token_Closed_Brace,
+	// Token_Closed_Bracket,
+	// Token_Error,
+	// Token_End_Of_Stream,
 
 	return node;
 }
@@ -303,7 +323,11 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser) {
 JSON_Node* JSON_parse(Buffer json) {
 	JSON_Parser parser = {};
 	parser.source = json;
+	
+	return JSON_parse_node(&parser, 0);
+}
 
-	return JSON_parse_node(&parser);
+void JSON_free(JSON_Node* root) {
+	
 }
 
