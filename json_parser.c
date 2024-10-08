@@ -265,6 +265,11 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 	return token;
 }
 
+// {
+// 	"pairs" : 123,
+// 	"aaa" : "asd"
+// }
+
 JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 	JSON_Node* node = malloc(sizeof(JSON_Node));
 	
@@ -272,7 +277,6 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 	
 	switch(token.type) {
 		case Token_Open_Brace: {
-
 			while(is_in_bounds(parser->source, parser->at) && !parser->error_encountered) {
 				token = JSON_next_token(parser);
 
@@ -291,6 +295,11 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 
 				JSON_Node* subnode = JSON_parse_node(parser, node);
 			}
+
+			token = JSON_next_token(parser);
+			if(token.type != Token_Closed_Brace) {
+				parser->error_encountered = 1;
+			}
 		} break;
 
 		case Token_Open_Bracket: {
@@ -302,7 +311,9 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 		case Token_True:
 		case Token_False:
 		case Token_Null: {
-			parent_node->value = token.value;
+			if(parent_node) {
+				parent_node->value = token.value;
+			}
 		} break;
 
 		default: {
