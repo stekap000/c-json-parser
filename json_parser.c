@@ -265,19 +265,31 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 	return token;
 }
 
-// {
-// 	"pairs" : 123,
-// 	"aaa" : "asd"
-// }
+void attach_child_node(JSON_Node* parent, JSON_Node* child) {
+	if(parent->first_child) {
+		// TODO: Consider adding pointer to the last child in JSON_Node, so that adding
+		//       becomes O(1).
+		
+		JSON_Node* it = parent->first_child;
+		while(it->next_sibling != 0) {
+			it = it->next_sibling;
+		}
+		it->next_sibling = child;
+	}
+	else {
+		parent->first_child = child;
+	}
+}
 
 JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
-	JSON_Node* node = malloc(sizeof(JSON_Node));
-	
 	JSON_Token token = JSON_next_token(parser);
 	
 	switch(token.type) {
 		case Token_Open_Brace: {
 			while(is_in_bounds(parser->source, parser->at) && !parser->error_encountered) {
+				JSON_Node* node = malloc(sizeof(JSON_Node));
+				parent_node
+				
 				token = JSON_next_token(parser);
 
 				if(token.type == Token_String) {
@@ -289,16 +301,14 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 						parser->error_encountered = 1;
 					}
 				}
+				else if(token.type == Token_Closed_Brace) {
+					break;
+				}
 				else {
 					parser->error_encountered = 1;
 				}
 
 				JSON_Node* subnode = JSON_parse_node(parser, node);
-			}
-
-			token = JSON_next_token(parser);
-			if(token.type != Token_Closed_Brace) {
-				parser->error_encountered = 1;
 			}
 		} break;
 
@@ -334,8 +344,10 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 JSON_Node* JSON_parse(Buffer json) {
 	JSON_Parser parser = {};
 	parser.source = json;
+
+	JSON_Node* root = malloc(sizeof(JSON_Node));
 	
-	return JSON_parse_node(&parser, 0);
+	return JSON_parse_node(&parser, root);
 }
 
 void JSON_free(JSON_Node* root) {
