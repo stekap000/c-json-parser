@@ -270,25 +270,24 @@ void attach_child_node(JSON_Node* parent, JSON_Node* child) {
 		// TODO: Consider adding pointer to the last child in JSON_Node, so that adding
 		//       becomes O(1).
 		
-		JSON_Node* it = parent->first_child;
+		JSON_Node* it = (JSON_Node*)parent->first_child;
 		while(it->next_sibling != 0) {
-			it = it->next_sibling;
+			it = (JSON_Node*)it->next_sibling;
 		}
-		it->next_sibling = child;
+		it->next_sibling = (struct JSON_Node*)child;
 	}
 	else {
-		parent->first_child = child;
+		parent->first_child = (struct JSON_Node*)child;
 	}
 }
 
 JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 	JSON_Token token = JSON_next_token(parser);
-	
+
 	switch(token.type) {
 		case Token_Open_Brace: {
 			while(is_in_bounds(parser->source, parser->at) && !parser->error_encountered) {
 				JSON_Node* node = malloc(sizeof(JSON_Node));
-				parent_node
 				
 				token = JSON_next_token(parser);
 
@@ -338,7 +337,7 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 	// Token_Error,
 	// Token_End_Of_Stream,
 
-	return node;
+	return NULL;
 }
 
 JSON_Node* JSON_parse(Buffer json) {
