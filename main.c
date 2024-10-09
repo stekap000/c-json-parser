@@ -59,7 +59,7 @@ b32 read_and_print_token(JSON_Parser* parser) {
 	}
 
 	if(token.type == Token_String || token.type == Token_Number) {
-		for(int i = 0; i < token.value.size; ++i) {
+		for(u32 i = 0; i < token.value.size; ++i) {
 			printf("%c", token.value.data[i]);
 		}
 		printf("\n");
@@ -69,19 +69,21 @@ b32 read_and_print_token(JSON_Parser* parser) {
 }
 
 int main() {
-#if 1
+#if 0
 	Buffer json_buffer = read_entire_file("test.json");
 	
-	JSON_Parser parser = {json_buffer, 0};
+	JSON_Parser parser = {json_buffer, 0, 0};
 	u32 number_of_tokens_to_read = 20;
 	
-	for(int i = 0; i < number_of_tokens_to_read; ++i) {
+	for(u32 i = 0; i < number_of_tokens_to_read; ++i) {
 		read_and_print_token(&parser);
 	}
 #else
-	Buffer json_buffer = read_entire_file("net_example.json");
-	JSON_Parser parser = {json_buffer, 0};
-	while(read_and_print_token(&parser));
+	//Buffer json_buffer = read_entire_file("net_example.json");
+	//JSON_Parser parser = {json_buffer, 0};
+	//while(read_and_print_token(&parser));
+	Buffer json = read_entire_file("small.json");
+	JSON_Node* root = JSON_parse(json);
 #endif
 	
 	return 0;

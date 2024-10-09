@@ -284,20 +284,23 @@ void attach_child_node(JSON_Node* parent, JSON_Node* child) {
 JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 	JSON_Token token = JSON_next_token(parser);
 
+	printf("TOKEN: %d\n", token);
+	return NULL;
+
 	switch(token.type) {
 		case Token_Open_Brace: {
 			while(is_in_bounds(parser->source, parser->at) && !parser->error_encountered) {
-				JSON_Node* node = malloc(sizeof(JSON_Node));
-				
+				Buffer label = {};
 				token = JSON_next_token(parser);
 
 				if(token.type == Token_String) {
-					node->label = token.value;
+					label = token.value;
 
 					token = JSON_next_token(parser);
 
 					if(token.type != Token_Colon) {
 						parser->error_encountered = 1;
+						break;
 					}
 				}
 				else if(token.type == Token_Closed_Brace) {
@@ -305,9 +308,23 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 				}
 				else {
 					parser->error_encountered = 1;
+					break;
 				}
 
-				JSON_Node* subnode = JSON_parse_node(parser, node);
+				JSON_Node* node = malloc(sizeof(JSON_Node));
+				node->label = label;
+				attach_child_node(parent_node, node);
+
+				JSON_parse_node(parser, node);
+
+				token = JSON_next_token(parser);
+
+				if(token.type != Token_Closed_Brace) {
+					break;
+				}
+				else if(token.type != Token_Comma) {
+					parser->error_encountered = 1;
+				}
 			}
 		} break;
 
@@ -331,7 +348,6 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 	}
 
 	// NOT YET USED
-	// Token_Comma,
 	// Token_Closed_Brace,
 	// Token_Closed_Bracket,
 	// Token_Error,
@@ -345,11 +361,12 @@ JSON_Node* JSON_parse(Buffer json) {
 	parser.source = json;
 
 	JSON_Node* root = malloc(sizeof(JSON_Node));
+	JSON_parse_node(&parser, root);
 	
-	return JSON_parse_node(&parser, root);
+	return root;
 }
 
 void JSON_free(JSON_Node* root) {
-	
+	(void)root;
 }
 
