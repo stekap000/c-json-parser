@@ -29,25 +29,6 @@ Buffer read_entire_file(char* filename) {
 	return buffer;
 }
 
-void print_token_type(JSON_Token_Type type) {
-	switch(type) {
-		case Token_Number:			{ printf("Number"); } break;
-		case Token_String:			{ printf("String"); } break;
-		case Token_True:			{ printf("True"); } break;
-		case Token_False:			{ printf("False"); } break;
-		case Token_Null:			{ printf("Null"); } break;
-		case Token_Colon:			{ printf("Colon"); } break;
-		case Token_Comma:			{ printf("Comma"); } break;
-		case Token_Open_Brace:		{ printf("Open_Brace"); } break;
-		case Token_Closed_Brace:	{ printf("Closed_Brace"); } break;
-		case Token_Open_Bracket:	{ printf("Open_Bracket"); } break;
-		case Token_Closed_Bracket:	{ printf("Closed_Bracket"); } break;
-		case Token_Error:			{ printf("Error"); } break;
-		case Token_End_Of_Stream:	{ printf("End_Of_Stream"); } break;
-		case Token_Count:           { printf("Count"); } break;
-	}
-}
-
 b32 read_and_print_token(JSON_Parser* parser) {
 	JSON_Token token = JSON_next_token(parser);
 	printf("Type: ");
@@ -68,45 +49,36 @@ b32 read_and_print_token(JSON_Parser* parser) {
 	return 1;
 }
 
-void print_json_tree(JSON_Node* root) {
-	JSON_Node* temp = root;
-
-	while(temp) {
-		for(u32 i = 0; i < temp->label.size; ++i) {
-			printf("%c", temp->label.data[i]);
+void print_json_tree(JSON_Node* root, u32 depth) {
+	if(depth == 0) {
+		printf("root\n");
+	}
+	
+	while(root) {
+		for(u32 i = 0; i < depth; ++i) {
+			printf("\t");
+		}
+		
+		for(u32 i = 0; i < root->label.size; ++i) {
+			printf("%c", root->label.data[i]);
 		}
 
-		if(temp->label.size) {
+		if(root->label.size) {
 			printf("\n");
 		}
 
-		temp = temp->next_sibling;
-		
-		if(temp == NULL) {
-			temp = root->first_child;
-			root = temp;
+		if(root->first_child) {
+			print_json_tree((JSON_Node*)root->first_child, depth + 1);
 		}
+
+		root = (JSON_Node*)root->next_sibling;
 	}
 }
 
 int main() {
-#if 0
-	Buffer json_buffer = read_entire_file("test.json");
-	
-	JSON_Parser parser = {json_buffer, 0, 0};
-	u32 number_of_tokens_to_read = 20;
-	
-	for(u32 i = 0; i < number_of_tokens_to_read; ++i) {
-		read_and_print_token(&parser);
-	}
-#else
-	//Buffer json_buffer = read_entire_file("net_example.json");
-	//JSON_Parser parser = {json_buffer, 0};
-	//while(read_and_print_token(&parser));
 	Buffer json = read_entire_file("small.json");
 	JSON_Node* root = JSON_parse(json);
-	print_json_tree(root);
-#endif
+	print_json_tree(root, 0);
 	
 	return 0;
 }

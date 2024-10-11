@@ -56,6 +56,25 @@ typedef enum token_type {
 	Token_Count
 } JSON_Token_Type;
 
+void print_token_type(JSON_Token_Type type) {
+	switch(type) {
+		case Token_Number:			{ printf("Number"); } break;
+		case Token_String:			{ printf("String"); } break;
+		case Token_True:			{ printf("True"); } break;
+		case Token_False:			{ printf("False"); } break;
+		case Token_Null:			{ printf("Null"); } break;
+		case Token_Colon:			{ printf("Colon"); } break;
+		case Token_Comma:			{ printf("Comma"); } break;
+		case Token_Open_Brace:		{ printf("Open_Brace"); } break;
+		case Token_Closed_Brace:	{ printf("Closed_Brace"); } break;
+		case Token_Open_Bracket:	{ printf("Open_Bracket"); } break;
+		case Token_Closed_Bracket:	{ printf("Closed_Bracket"); } break;
+		case Token_Error:			{ printf("Error"); } break;
+		case Token_End_Of_Stream:	{ printf("End_Of_Stream"); } break;
+		case Token_Count:           { printf("Count"); } break;
+	}
+}
+
 typedef struct json_token {
 	JSON_Token_Type type;
 	Buffer value;
@@ -288,8 +307,6 @@ void attach_child_node(JSON_Node* parent, JSON_Node* child) {
 JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 	JSON_Token token = JSON_next_token(parser);
 
-	printf("TOKEN TYPE: %d\n", token.type);
-	
 	switch(token.type) {
 		case Token_Open_Brace: {
 
@@ -297,13 +314,10 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 				Buffer label = {};
 				token = JSON_next_token(parser);
 
-				printf("NEXT TOKEN: %d\n", token.type);
-
 				if(token.type == Token_String) {
 					label = token.value;
 
 					token = JSON_next_token(parser);
-					printf("TOKEN AFTER STRING: %d\n", token.type);
 
 					if(token.type != Token_Colon) {
 						parser->error_encountered = 1;
@@ -315,7 +329,6 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 				}
 				else {
 					parser->error_encountered = 1;
-					break;
 				}
 
 				JSON_Node* node = new_json_node();
@@ -326,7 +339,7 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 
 				token = JSON_next_token(parser);
 
-				if(token.type != Token_Closed_Brace) {
+				if(token.type == Token_Closed_Brace) {
 					break;
 				}
 				else if(token.type != Token_Comma) {
@@ -369,6 +382,10 @@ JSON_Node* JSON_parse(Buffer json) {
 
 	JSON_Node* root = new_json_node();
 	JSON_parse_node(&parser, root);
+
+	if(parser.error_encountered) {
+		printf("ERROR ENCOUNTERED\n");
+	}
 
 	return root;
 }
