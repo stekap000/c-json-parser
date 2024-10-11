@@ -68,6 +68,27 @@ b32 read_and_print_token(JSON_Parser* parser) {
 	return 1;
 }
 
+void print_json_tree(JSON_Node* root) {
+	JSON_Node* temp = root;
+
+	while(temp) {
+		for(u32 i = 0; i < temp->label.size; ++i) {
+			printf("%c", temp->label.data[i]);
+		}
+
+		if(temp->label.size) {
+			printf("\n");
+		}
+
+		temp = temp->next_sibling;
+		
+		if(temp == NULL) {
+			temp = root->first_child;
+			root = temp;
+		}
+	}
+}
+
 int main() {
 #if 0
 	Buffer json_buffer = read_entire_file("test.json");
@@ -84,6 +105,7 @@ int main() {
 	//while(read_and_print_token(&parser));
 	Buffer json = read_entire_file("small.json");
 	JSON_Node* root = JSON_parse(json);
+	print_json_tree(root);
 #endif
 	
 	return 0;

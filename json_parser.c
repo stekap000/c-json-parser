@@ -75,6 +75,10 @@ typedef struct {
 	struct JSON_Node* next_sibling;
 } JSON_Node;
 
+JSON_Node* new_json_node() {
+	return calloc(1, sizeof(JSON_Node));
+}
+
 b32 is_json_white_space(u8 c) {
 	return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
 }
@@ -284,19 +288,22 @@ void attach_child_node(JSON_Node* parent, JSON_Node* child) {
 JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 	JSON_Token token = JSON_next_token(parser);
 
-	printf("TOKEN: %d\n", token);
-	return NULL;
-
+	printf("TOKEN TYPE: %d\n", token.type);
+	
 	switch(token.type) {
 		case Token_Open_Brace: {
+
 			while(is_in_bounds(parser->source, parser->at) && !parser->error_encountered) {
 				Buffer label = {};
 				token = JSON_next_token(parser);
+
+				printf("NEXT TOKEN: %d\n", token.type);
 
 				if(token.type == Token_String) {
 					label = token.value;
 
 					token = JSON_next_token(parser);
+					printf("TOKEN AFTER STRING: %d\n", token.type);
 
 					if(token.type != Token_Colon) {
 						parser->error_encountered = 1;
@@ -311,7 +318,7 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 					break;
 				}
 
-				JSON_Node* node = malloc(sizeof(JSON_Node));
+				JSON_Node* node = new_json_node();
 				node->label = label;
 				attach_child_node(parent_node, node);
 
@@ -360,9 +367,9 @@ JSON_Node* JSON_parse(Buffer json) {
 	JSON_Parser parser = {};
 	parser.source = json;
 
-	JSON_Node* root = malloc(sizeof(JSON_Node));
+	JSON_Node* root = new_json_node();
 	JSON_parse_node(&parser, root);
-	
+
 	return root;
 }
 
