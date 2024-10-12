@@ -49,26 +49,28 @@ b32 read_and_print_token(JSON_Parser* parser) {
 	return 1;
 }
 
-void print_json_tree(JSON_Node* root, u32 depth) {
+void print_json_tree_structure(JSON_Node* root, u32 depth) {
 	if(depth == 0) {
-		printf("root\n");
+		printf("root");
 	}
 	
 	while(root) {
 		for(u32 i = 0; i < depth; ++i) {
-			printf("\t");
+			printf("|   ");
 		}
 		
 		for(u32 i = 0; i < root->label.size; ++i) {
 			printf("%c", root->label.data[i]);
 		}
 
-		if(root->label.size) {
-			printf("\n");
+		if(root->label.size == 0 && depth != 0) {
+			printf("_");
 		}
 
+		printf("\n");
+		
 		if(root->first_child) {
-			print_json_tree((JSON_Node*)root->first_child, depth + 1);
+			print_json_tree_structure((JSON_Node*)root->first_child, depth + 1);
 		}
 
 		root = (JSON_Node*)root->next_sibling;
@@ -78,7 +80,7 @@ void print_json_tree(JSON_Node* root, u32 depth) {
 int main() {
 	Buffer json = read_entire_file("small.json");
 	JSON_Node* root = JSON_parse(json);
-	print_json_tree(root, 0);
+	print_json_tree_structure(root, 0);
 	
 	return 0;
 }

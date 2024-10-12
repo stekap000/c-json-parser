@@ -309,7 +309,6 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 
 	switch(token.type) {
 		case Token_Open_Brace: {
-
 			while(is_in_bounds(parser->source, parser->at) && !parser->error_encountered) {
 				Buffer label = {};
 				token = JSON_next_token(parser);
@@ -348,8 +347,24 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 			}
 		} break;
 
+		// TODO: Support for empty arrays.
 		case Token_Open_Bracket: {
+			while(is_in_bounds(parser->source, parser->at) && !parser->error_encountered) {
+				// Node for the element within array.
+				JSON_Node* node = new_json_node();
+				attach_child_node(parent_node, node);
 
+				JSON_parse_node(parser, node);
+
+				token = JSON_next_token(parser);
+
+				if(token.type == Token_Closed_Bracket) {
+					break;
+				}
+				else if(token.type != Token_Comma) {
+					parser->error_encountered = 1;
+				}
+			}
 		} break;
 
 		case Token_Number:
@@ -368,7 +383,6 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 	}
 
 	// NOT YET USED
-	// Token_Closed_Brace,
 	// Token_Closed_Bracket,
 	// Token_Error,
 	// Token_End_Of_Stream,
