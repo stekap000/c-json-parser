@@ -304,7 +304,7 @@ void attach_child_node(JSON_Node* parent, JSON_Node* child) {
 	}
 }
 
-JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
+void JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 	JSON_Token token = JSON_next_token(parser);
 
 	switch(token.type) {
@@ -349,6 +349,11 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 
 		// TODO: Support for empty arrays.
 		case Token_Open_Bracket: {
+			if(parser->source.data[parser->at] == ']') {
+			 	JSON_next_token(parser);
+			 	break;
+			}
+			
 			while(is_in_bounds(parser->source, parser->at) && !parser->error_encountered) {
 				// Node for the element within array.
 				JSON_Node* node = new_json_node();
@@ -377,17 +382,12 @@ JSON_Node* JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 			}
 		} break;
 
+		case Token_End_Of_Stream: break;
+
 		default: {
 			parser->error_encountered = 1;
 		}
 	}
-
-	// NOT YET USED
-	// Token_Closed_Bracket,
-	// Token_Error,
-	// Token_End_Of_Stream,
-
-	return NULL;
 }
 
 JSON_Node* JSON_parse(Buffer json) {
