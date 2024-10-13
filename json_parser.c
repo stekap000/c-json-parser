@@ -406,3 +406,7 @@ void JSON_free(JSON_Node* root) {
 	(void)root;
 }
 
+// TODO: Conversion functions from bytes to different types.
+// TODO: Choice of lazy evaluation and upfront (during parsing) evaluation (if possible).
+// TODO: Node search function.
+
