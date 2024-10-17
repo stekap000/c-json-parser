@@ -79,11 +79,10 @@ void print_json_tree_structure(JSON_Node* root, u32 depth) {
 
 int main() {
 	Buffer json = read_entire_file("small.json");
-	while(1) {
+
 	JSON_Node* root = JSON_parse(json);
-	//print_json_tree_structure(root, 0);
+	print_json_tree_structure(root, 0);
 	JSON_free(root);
-	}
 	
 	return 0;
 }

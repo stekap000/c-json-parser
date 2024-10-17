@@ -403,16 +403,24 @@ JSON_Node* JSON_parse(Buffer json) {
 	return root;
 }
 
-void JSON_free(JSON_Node* root) {
-	if(root == 0) {
+void JSON_free_node_subtrees(JSON_Node* node) {
+	if(node == 0) {
 		return;
 	}
-	
-	JSON_free((JSON_Node*)root->first_child);
-	JSON_free((JSON_Node*)root->next_sibling);
 
-	free(root->first_child);
-	free(root->next_sibling);
+	JSON_free_node_subtrees((JSON_Node*)node->first_child);
+	JSON_free_node_subtrees((JSON_Node*)node->next_sibling);
+
+	free(node->first_child);
+	free(node->next_sibling);
+}
+
+// NOTE: This version that relies on first freeing subtrees and then root node
+//       feels better to use that version where we would have only one function
+//       that would need to take address of a pointer to root node.
+void JSON_free(JSON_Node* node) {
+	JSON_free_node_subtrees(node);
+	free(node);
 }
 
 // TODO: Conversion functions from bytes to different types.
