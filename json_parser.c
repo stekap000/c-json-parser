@@ -94,6 +94,7 @@ typedef struct {
 	struct JSON_Node* next_sibling;
 } JSON_Node;
 
+// TODO: Maybe change allocation to use arena for whole JSON tree.
 JSON_Node* new_json_node() {
 	return calloc(1, sizeof(JSON_Node));
 }
@@ -403,7 +404,15 @@ JSON_Node* JSON_parse(Buffer json) {
 }
 
 void JSON_free(JSON_Node* root) {
-	(void)root;
+	if(root == 0) {
+		return;
+	}
+	
+	JSON_free((JSON_Node*)root->first_child);
+	JSON_free((JSON_Node*)root->next_sibling);
+
+	free(root->first_child);
+	free(root->next_sibling);
 }
 
 // TODO: Conversion functions from bytes to different types.
