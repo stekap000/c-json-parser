@@ -381,7 +381,7 @@ void JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 			}
 		} break;
 
-		case Token_End_Of_Stream: break;
+		case Token_End_Of_Stream: {} break;
 
 		default: {
 			parser->error_encountered = 1;
@@ -424,7 +424,7 @@ void JSON_free(JSON_Node* node) {
 }
 
 b32 buffer_and_string_are_equal(Buffer buffer, char* string) {
-	u32 i;
+	u64 i;
 	for(i = 0; i < buffer.size; ++i) {
 		if(string[i] == 0 || buffer.data[i] != string[i]) {
 			return 0;
