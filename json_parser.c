@@ -416,16 +416,45 @@ void JSON_free_node_subtrees(JSON_Node* node) {
 }
 
 // NOTE: This version that relies on first freeing subtrees and then root node
-//       feels better to use that version where we would have only one function
+//       feels better to use than version where we would have only one function
 //       that would need to take address of a pointer to root node.
 void JSON_free(JSON_Node* node) {
 	JSON_free_node_subtrees(node);
 	free(node);
 }
 
-JSON_Node* JSON_find(char* label) {
-	(void)label;
+b32 buffer_and_string_are_equal(Buffer buffer, char* string) {
+	u32 i;
+	for(i = 0; i < buffer.size; ++i) {
+		if(string[i] == 0 || buffer.data[i] != string[i]) {
+			return 0;
+		}
+	}
 
+	if(string[i] == 0) {
+		return 1;
+	}
+	
+	return 0;
+}
+
+JSON_Node* JSON_find(JSON_Node* node, char* label) {
+	if(node == 0) {
+		return 0;
+	}
+	
+	for(JSON_Node* current_node = node; current_node; current_node = (JSON_Node*)current_node->next_sibling) {
+		if(buffer_and_string_are_equal(current_node.label, label)) {
+			return current_node;
+		}
+
+		//JSON_find(current_node->first_child, label);
+	}
+
+	
+
+	//JSON_find((JSON_Node*)node->next_sibling, label);
+	//JSON_find((JSON_Node*)node->first_child, label);
 }
 
 // TODO: Conversion functions from bytes to different types.
