@@ -444,17 +444,17 @@ JSON_Node* JSON_find(JSON_Node* node, char* label) {
 	}
 	
 	for(JSON_Node* current_node = node; current_node; current_node = (JSON_Node*)current_node->next_sibling) {
-		if(buffer_and_string_are_equal(current_node.label, label)) {
+		if(buffer_and_string_are_equal(current_node->label, label)) {
 			return current_node;
 		}
 
-		//JSON_find(current_node->first_child, label);
+		JSON_Node* temp = JSON_find((JSON_Node*)current_node->first_child, label);
+		if(temp) {
+			return temp;
+		}
 	}
 
-	
-
-	//JSON_find((JSON_Node*)node->next_sibling, label);
-	//JSON_find((JSON_Node*)node->first_child, label);
+	return 0;
 }
 
 // TODO: Conversion functions from bytes to different types.
