@@ -457,6 +457,46 @@ JSON_Node* JSON_find(JSON_Node* node, char* label) {
 	return 0;
 }
 
+JSON_Node* JSON_find_sibling(JSON_Node* node, char* label) {
+	if(node == 0) {
+		return 0;
+	}
+	
+	for(JSON_Node* current_node = node; current_node; current_node = (JSON_Node*)current_node->next_sibling) {
+		if(buffer_and_string_are_equal(current_node->label, label)) {
+			return current_node;
+		}
+	}
+
+	return 0;
+}
+
+JSON_Node* JSON_find_child(JSON_Node* node, char* label) {
+	if(node == 0) {
+		return 0;
+	}
+
+	return JSON_find_sibling((JSON_Node*)node->first_child, label);
+}
+
+// TODO: Write custom atof for Buffer type (that would avoid string allocation).
+#include <stdlib.h>
+f64 JSON_node_to_number(JSON_Node* node) {
+	if(node == 0 || node->value.data == 0 || node->value.size == 0) {
+		return 0;
+	}
+
+	char* string = malloc(node->value.size + 1);
+	for(u64 i = 0; i < node->value.size; ++i) {
+		string[i] = node->value.data[i];
+	}
+	string[node->value.size] = 0;
+	f64 number = atof(string);
+	free(string);
+
+	return number;
+}
+
 // TODO: Conversion functions from bytes to different types.
 // TODO: Choice of lazy evaluation and upfront (during parsing) evaluation (if possible).
 

@@ -78,10 +78,20 @@ void print_json_tree_structure(JSON_Node* root, u32 depth) {
 }
 
 int main() {
-	Buffer json = read_entire_file("small.json");
+	Buffer json = read_entire_file("test.json");
 
 	JSON_Node* root = JSON_parse(json);
-	print_json_tree_structure(root, 0);
+	//print_json_tree_structure(root, 0);
+
+	JSON_Node* pairs = JSON_find_child(root, "pairs");
+	// TODO: Make foreach version for these cumbersome iterations.
+	for(JSON_Node* coords = (JSON_Node*)pairs->first_child; coords; coords = (JSON_Node*)coords->next_sibling) {
+		for(JSON_Node* coord = (JSON_Node*)coords->first_child; coord; coord = (JSON_Node*)coord->next_sibling) {
+			f64 number = JSON_node_to_number(coord);
+			printf("%.16lf\n", number);
+		}
+	}
+	
 	JSON_free(root);
 	
 	return 0;
