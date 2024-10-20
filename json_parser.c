@@ -419,7 +419,7 @@ JSON_Node* JSON_find(JSON_Node* node, char* label) {
 		return 0;
 	}
 	
-	for(JSON_Node* current_node = node; current_node; current_node = (JSON_Node*)current_node->next_sibling) {
+	foreach_sibling(node, current_node) {
 		if(buffer_and_string_are_equal(current_node->label, label)) {
 			return current_node;
 		}
@@ -438,7 +438,7 @@ JSON_Node* JSON_find_sibling(JSON_Node* node, char* label) {
 		return 0;
 	}
 	
-	for(JSON_Node* current_node = node; current_node; current_node = (JSON_Node*)current_node->next_sibling) {
+	foreach_sibling(node, current_node) {
 		if(buffer_and_string_are_equal(current_node->label, label)) {
 			return current_node;
 		}

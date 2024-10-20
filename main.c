@@ -36,9 +36,9 @@ int main() {
 	//print_json_tree_structure(root, 0);
 
 	JSON_Node* pairs = JSON_find_child(root, "pairs");
-	// TODO: Make foreach version for these cumbersome iterations.
-	for(JSON_Node* coords = (JSON_Node*)pairs->first_child; coords; coords = (JSON_Node*)coords->next_sibling) {
-		for(JSON_Node* coord = (JSON_Node*)coords->first_child; coord; coord = (JSON_Node*)coord->next_sibling) {
+	
+	foreach_child(pairs, coords) {
+		foreach_child(coords, coord) {
 			f64 number = JSON_node_to_number(coord);
 			printf("%.16lf\n", number);
 		}

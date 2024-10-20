@@ -59,6 +59,10 @@ typedef struct {
 	struct JSON_Node* next_sibling;
 } JSON_Node;
 
+#define foreach_child(node, iterator) for(JSON_Node* iterator = (JSON_Node*)node->first_child; iterator; iterator = (JSON_Node*)iterator->next_sibling)
+
+#define foreach_sibling(node, iterator) for(JSON_Node* iterator = (JSON_Node*)node; iterator; iterator = (JSON_Node*)iterator->next_sibling)
+
 void print_token_type(JSON_Token_Type type);
 void print_json_tree_structure(JSON_Node* root, u32 depth);
 
