@@ -364,9 +364,10 @@ void JSON_parse_node(JSON_Parser* parser, JSON_Node* parent_node) {
 	}
 }
 
-JSON_Node* JSON_parse(Buffer json) {
+JSON_Node* JSON_parse(u8* data, u64 size) {
 	JSON_Parser parser = {};
-	parser.source = json;
+	parser.source.data = data;
+	parser.source.size = size;
 
 	JSON_Node* root = new_json_node();
 	JSON_parse_node(&parser, root);

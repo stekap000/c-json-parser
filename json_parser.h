@@ -62,7 +62,7 @@ typedef struct {
 void print_token_type(JSON_Token_Type type);
 void print_json_tree_structure(JSON_Node* root, u32 depth);
 
-JSON_Node* JSON_parse(Buffer json);
+JSON_Node* JSON_parse(u8* data, u64 size);
 void JSON_free_node_subtrees(JSON_Node* node);
 void JSON_free(JSON_Node* node);
 JSON_Node* JSON_find(JSON_Node* node, char* label);

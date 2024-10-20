@@ -32,7 +32,7 @@ Buffer read_entire_file(char* filename) {
 int main() {
 	Buffer json = read_entire_file("test.json");
 
-	JSON_Node* root = JSON_parse(json);
+	JSON_Node* root = JSON_parse(json.data, json.size);
 	//print_json_tree_structure(root, 0);
 
 	JSON_Node* pairs = JSON_find_child(root, "pairs");
