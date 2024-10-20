@@ -13,48 +13,10 @@
 //       behaviour if json bytes somehow become invalid memory. It is faster, but requires this
 //       knowledge. Consider adding the option where tokenization buffers are explicitly allocated.
 
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned int u32;
-typedef unsigned long long u64;
+#include <stdio.h>
+#include <stdlib.h>
 
-typedef char s8;
-typedef short s16;
-typedef int s32;
-typedef long long s64;
-
-typedef float f32;
-typedef double f64;
-
-typedef unsigned int b32;
-
-typedef struct buffer {
-	u64 size;
-	u8* data;
-} Buffer;
-
-b32 is_in_bounds(Buffer buffer, u64 index) {
-	return (index < buffer.size);
-}
-
-typedef enum token_type {
-	Token_Number,
-	Token_String,
-	Token_True,
-	Token_False,
-	Token_Null,
-	Token_Colon,
-	Token_Comma,
-	Token_Open_Brace,
-	Token_Closed_Brace,
-	Token_Open_Bracket,
-	Token_Closed_Bracket,
-
-	Token_Error,
-	Token_End_Of_Stream,
-	
-	Token_Count
-} JSON_Token_Type;
+#include "json_parser.h"
 
 void print_token_type(JSON_Token_Type type) {
 	switch(type) {
@@ -75,24 +37,37 @@ void print_token_type(JSON_Token_Type type) {
 	}
 }
 
-typedef struct json_token {
-	JSON_Token_Type type;
-	Buffer value;
-} JSON_Token;
+void print_json_tree_structure(JSON_Node* root, u32 depth) {
+	if(depth == 0) {
+		printf("root");
+	}
+	
+	while(root) {
+		for(u32 i = 0; i < depth; ++i) {
+			printf("|   ");
+		}
+		
+		for(u32 i = 0; i < root->label.size; ++i) {
+			printf("%c", root->label.data[i]);
+		}
 
-typedef struct {
-	Buffer source;
-	u64 at;
-	u32 error_encountered;
-} JSON_Parser;
+		if(root->label.size == 0 && depth != 0) {
+			printf("_");
+		}
 
-typedef struct {
-	// TODO: This could change a bit with immediate evaluation.
-	Buffer label;
-	Buffer value;
-	struct JSON_Node* first_child;
-	struct JSON_Node* next_sibling;
-} JSON_Node;
+		printf("\n");
+		
+		if(root->first_child) {
+			print_json_tree_structure((JSON_Node*)root->first_child, depth + 1);
+		}
+
+		root = (JSON_Node*)root->next_sibling;
+	}
+}
+
+b32 is_in_bounds(Buffer buffer, u64 index) {
+	return (index < buffer.size);
+}
 
 // TODO: Maybe change allocation to use arena for whole JSON tree.
 JSON_Node* new_json_node() {
