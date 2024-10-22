@@ -13,11 +13,13 @@
 //       behaviour if json bytes somehow become invalid memory. It is faster, but requires this
 //       knowledge. Consider adding the option where tokenization buffers are explicitly allocated.
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
 #include "json_parser.h"
+
+#ifdef JSON_PARSER_DEBUG
+#include <stdio.h>
 
 void print_token_type(JSON_Token_Type type) {
 	switch(type) {
@@ -65,6 +67,7 @@ void print_json_tree_structure(JSON_Node* root, u32 depth) {
 		root = (JSON_Node*)root->next_sibling;
 	}
 }
+#endif
 
 b32 is_in_bounds(Buffer buffer, u64 index) {
 	return (index < buffer.size);
@@ -373,8 +376,10 @@ JSON_Node* JSON_parse(u8* data, u64 size) {
 	JSON_Node* root = new_json_node();
 	JSON_parse_node(&parser, root);
 
+	// Indicate failure with null pointer.
 	if(parser.error_encountered) {
-		printf("ERROR ENCOUNTERED\n");
+		JSON_free(root);
+		return 0;
 	}
 
 	return root;

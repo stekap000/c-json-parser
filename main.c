@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-// TODO: Change this to header file after its creation.
 #include "json_parser.h"
 
 Buffer read_entire_file(char* filename) {
