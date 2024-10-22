@@ -18,6 +18,12 @@
 
 #include "json_parser.h"
 
+#define MAX_BYTE_VALUE 255
+
+// TODO: Remove later.
+#include <assert.h>
+#define NOT_YET_IMPLEMENTED(msg) assert(!msg)
+
 #ifdef JSON_PARSER_DEBUG
 #include <stdio.h>
 
@@ -84,6 +90,24 @@ b32 is_json_white_space(u8 c) {
 
 b32 is_ascii_digit(u8 c) {
 	return (c >= '0' && c <= '9');
+}
+
+b32 is_ascii_hex_digit(u8 c) {
+	return ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+}
+
+u8 ascii_hex_digit_to_byte(u8 c) {
+	if(c >= '0' && c <= '9') {
+		return c - '0';
+	}
+	else if(c >= 'a' && c <= 'f') {
+		return c - 'a' + 10;
+	}
+	else if(c >= 'A' && c <= 'F') {
+		return c - 'A' + 10;
+	}
+
+	return MAX_BYTE_VALUE;
 }
 
 void parser_skip_white_space(JSON_Parser* parser) {
@@ -510,7 +534,6 @@ bool JSON_node_to_bool(JSON_Node* node) {
 			node->value.data[3] == 'e');
 }
 
-// TODO: Handle escaped characters.
 char* JSON_node_to_new_string(JSON_Node* node) {
 	if(node == 0 || node->value.data == 0 || node->value.size == 0) {
 		return 0;
@@ -520,6 +543,59 @@ char* JSON_node_to_new_string(JSON_Node* node) {
 	u64 i;
 	for(i = 0; i < node->value.size; ++i) {
 		string[i] = node->value.data[i];
+	}
+	string[i] = 0;
+	return string;
+}
+
+char* JSON_node_to_new_string_resolved(JSON_Node* node) {
+	NOT_YET_IMPLEMENTED("Conversion outlined. Two indices must be followed, not just one.");
+	
+	if(node == 0 || node->value.data == 0 || node->value.size == 0) {
+		return 0;
+	}
+
+	char* string = malloc(node->value.size + 1);
+	u64 i;
+	for(i = 0; i < node->value.size; ++i) {
+		if(node->value.data[i] == '\\') {
+			// '\' can't be the last string character since parser indicates error in that case.
+			switch(node->value.data[i+1]) {
+				case '\\': { string[i++] = '\\'; } break;
+				case '/' : { string[i++] = '/';  } break;
+				case 'b' : { string[i++] = '\b'; } break;
+				case 'f' : { string[i++] = '\f'; } break;
+				case 'n' : { string[i++] = '\n'; } break;
+				case 'r' : { string[i++] = '\r'; } break;
+				case 't' : { string[i++] = '\t'; } break;
+				case 'u' : {
+					// All 4 hex digits must follow.
+					if((i+4) < node->value.size) {
+						u8 b1 = ascii_hex_digit_to_byte(node->value.data[i+1]);
+						u8 b2 = ascii_hex_digit_to_byte(node->value.data[i+2]);
+						u8 b3 = ascii_hex_digit_to_byte(node->value.data[i+3]);
+						u8 b4 = ascii_hex_digit_to_byte(node->value.data[i+4]);
+						
+						if(b1 == MAX_BYTE_VALUE || b2 == MAX_BYTE_VALUE || b3 == MAX_BYTE_VALUE || b4 == MAX_BYTE_VALUE) {
+							free(string);
+							return 0;
+						}
+
+						string[i+1] = (u8)((b3 << 4) | b4);
+						string[i+2] = (u8)((b1 << 4) | b2);
+
+						i += 4;
+					}
+					else {
+						free(string);
+						return 0;
+					}
+				} break;
+			}
+		}
+		else {
+			string[i] = node->value.data[i];
+		}
 	}
 	string[i] = 0;
 	return string;

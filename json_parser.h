@@ -62,7 +62,6 @@ typedef struct {
 } JSON_Node;
 
 #define foreach_child(node, iterator) for(JSON_Node* iterator = (JSON_Node*)node->first_child; iterator; iterator = (JSON_Node*)iterator->next_sibling)
-
 #define foreach_sibling(node, iterator) for(JSON_Node* iterator = (JSON_Node*)node; iterator; iterator = (JSON_Node*)iterator->next_sibling)
 
 #ifdef JSON_PARSER_DEBUG
@@ -80,6 +79,7 @@ JSON_Node* JSON_find_child(JSON_Node* node, char* label);
 bool	JSON_node_is_null(JSON_Node* node);
 f64		JSON_node_to_number(JSON_Node* node);
 char*	JSON_node_to_new_string(JSON_Node* node);
+char*	JSON_node_to_new_string_resolved(JSON_Node* node);
 char	JSON_node_to_char(JSON_Node* node);
 bool	JSON_node_to_bool(JSON_Node* node);
 
