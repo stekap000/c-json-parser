@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "json_parser.h"
 
@@ -455,13 +456,24 @@ JSON_Node* JSON_find_child(JSON_Node* node, char* label) {
 	return JSON_find_sibling((JSON_Node*)node->first_child, label);
 }
 
+bool JSON_node_is_null(JSON_Node* node) {
+	if(node == 0 || node->value.data == 0 || node->value.size != 4) {
+		return 0;
+	}
+
+	return (node->value.data[0] == 'n' &&
+			node->value.data[1] == 'u' &&
+			node->value.data[2] == 'l' &&
+			node->value.data[3] == 'l');
+}
+
 // TODO: Write custom atof for Buffer type (that would avoid string allocation).
-#include <stdlib.h>
 f64 JSON_node_to_number(JSON_Node* node) {
 	if(node == 0 || node->value.data == 0 || node->value.size == 0) {
 		return 0;
 	}
 
+	// This is done to not alter source bytes (keeping them always constant).
 	char* string = malloc(node->value.size + 1);
 	for(u64 i = 0; i < node->value.size; ++i) {
 		string[i] = node->value.data[i];
@@ -471,6 +483,40 @@ f64 JSON_node_to_number(JSON_Node* node) {
 	free(string);
 
 	return number;
+}
+
+char JSON_node_to_char(JSON_Node* node) {
+	if(node == 0 || node->value.data == 0 || node->value.size == 0) {
+		return 0;
+	}
+	
+	return node->value.data[0];
+}
+
+bool JSON_node_to_bool(JSON_Node* node) {
+	if(node == 0 || node->value.data == 0 || node->value.size < 4) {
+		return 0;
+	}
+
+	return (node->value.data[0] == 't' &&
+			node->value.data[1] == 'r' &&
+			node->value.data[2] == 'u' &&
+			node->value.data[3] == 'e');
+}
+
+// TODO: Handle escaped characters.
+char* JSON_node_to_new_string(JSON_Node* node) {
+	if(node == 0 || node->value.data == 0 || node->value.size == 0) {
+		return 0;
+	}
+	
+	char* string = malloc(node->value.size + 1);
+	u64 i;
+	for(i = 0; i < node->value.size; ++i) {
+		string[i] = node->value.data[i];
+	}
+	string[i] = 0;
+	return string;
 }
 
 // TODO: Conversion functions from bytes to different types.

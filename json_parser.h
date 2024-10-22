@@ -1,6 +1,8 @@
 #ifndef JSON_PARSER_H
 #define JSON_PARSER_H
 
+#include <stdbool.h>
+
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
@@ -72,6 +74,11 @@ void JSON_free(JSON_Node* node);
 JSON_Node* JSON_find(JSON_Node* node, char* label);
 JSON_Node* JSON_find_sibling(JSON_Node* node, char* label);
 JSON_Node* JSON_find_child(JSON_Node* node, char* label);
+
+bool JSON_node_is_null(JSON_Node* node);
 f64 JSON_node_to_number(JSON_Node* node);
+char* JSON_node_to_new_string(JSON_Node* node);
+char JSON_node_to_char(JSON_Node* node);
+bool JSON_node_to_bool(JSON_Node* node);
 
 #endif // JSON_PARSER_H
