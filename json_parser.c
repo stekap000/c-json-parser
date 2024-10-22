@@ -503,7 +503,8 @@ bool JSON_node_to_bool(JSON_Node* node) {
 		return 0;
 	}
 
-	return (node->value.data[0] == 't' &&
+	return (node->value.size    ==  4  &&
+			node->value.data[0] == 't' &&
 			node->value.data[1] == 'r' &&
 			node->value.data[2] == 'u' &&
 			node->value.data[3] == 'e');
@@ -524,6 +525,5 @@ char* JSON_node_to_new_string(JSON_Node* node) {
 	return string;
 }
 
-// TODO: Conversion functions from bytes to different types.
 // TODO: Choice of lazy evaluation and upfront (during parsing) evaluation (if possible).
 
