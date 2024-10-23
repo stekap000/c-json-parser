@@ -12,6 +12,9 @@
 //       pointers with attached size that point somewhere in json bytes. This leads to undefined
 //       behaviour if json bytes somehow become invalid memory. It is faster, but requires this
 //       knowledge. Consider adding the option where tokenization buffers are explicitly allocated.
+// TODO: Using existing escape characters resolution to handle escape characters in labels.
+// TODO: Choice of lazy evaluation and upfront (during parsing) evaluation (if possible).
+
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -549,57 +552,67 @@ char* JSON_node_to_new_string(JSON_Node* node) {
 }
 
 char* JSON_node_to_new_string_resolved(JSON_Node* node) {
-	NOT_YET_IMPLEMENTED("Conversion outlined. Two indices must be followed, not just one.");
-	
 	if(node == 0 || node->value.data == 0 || node->value.size == 0) {
 		return 0;
 	}
 
 	char* string = malloc(node->value.size + 1);
-	u64 i;
-	for(i = 0; i < node->value.size; ++i) {
-		if(node->value.data[i] == '\\') {
+	
+	u64 buffer_index = 0;
+	u64 string_index = 0;
+	while(buffer_index < node->value.size) {
+		if(node->value.data[buffer_index] == '\\') {
 			// '\' can't be the last string character since parser indicates error in that case.
-			switch(node->value.data[i+1]) {
-				case '\\': { string[i++] = '\\'; } break;
-				case '/' : { string[i++] = '/';  } break;
-				case 'b' : { string[i++] = '\b'; } break;
-				case 'f' : { string[i++] = '\f'; } break;
-				case 'n' : { string[i++] = '\n'; } break;
-				case 'r' : { string[i++] = '\r'; } break;
-				case 't' : { string[i++] = '\t'; } break;
+			switch(node->value.data[++buffer_index]) {
+				case '\\': { string[string_index++] = '\\'; } break;
+				case '/' : { string[string_index++] = '/';  } break;
+				case 'b' : { string[string_index++] = '\b'; } break;
+				case 'f' : { string[string_index++] = '\f'; } break;
+				case 'n' : { string[string_index++] = '\n'; } break;
+				case 'r' : { string[string_index++] = '\r'; } break;
+				case 't' : { string[string_index++] = '\t'; } break;
 				case 'u' : {
 					// All 4 hex digits must follow.
-					if((i+4) < node->value.size) {
-						u8 b1 = ascii_hex_digit_to_byte(node->value.data[i+1]);
-						u8 b2 = ascii_hex_digit_to_byte(node->value.data[i+2]);
-						u8 b3 = ascii_hex_digit_to_byte(node->value.data[i+3]);
-						u8 b4 = ascii_hex_digit_to_byte(node->value.data[i+4]);
+					if((buffer_index+4) < node->value.size) {
+						u8 b1 = ascii_hex_digit_to_byte(node->value.data[buffer_index+1]);
+						u8 b2 = ascii_hex_digit_to_byte(node->value.data[buffer_index+2]);
+						u8 b3 = ascii_hex_digit_to_byte(node->value.data[buffer_index+3]);
+						u8 b4 = ascii_hex_digit_to_byte(node->value.data[buffer_index+4]);
 						
 						if(b1 == MAX_BYTE_VALUE || b2 == MAX_BYTE_VALUE || b3 == MAX_BYTE_VALUE || b4 == MAX_BYTE_VALUE) {
 							free(string);
 							return 0;
 						}
 
-						string[i+1] = (u8)((b3 << 4) | b4);
-						string[i+2] = (u8)((b1 << 4) | b2);
+						string[string_index++] = (u8)((b3 << 4) | b4);
+						string[string_index++] = (u8)((b1 << 4) | b2);
 
-						i += 4;
+						buffer_index += 4;
 					}
 					else {
 						free(string);
 						return 0;
 					}
 				} break;
+				default: {
+					free(string);
+					return 0;
+				} break;
 			}
+
+			++buffer_index;
 		}
 		else {
-			string[i] = node->value.data[i];
+			string[string_index++] = node->value.data[buffer_index++];
 		}
 	}
-	string[i] = 0;
+
+	string[string_index] = 0;
+
+	if(string_index != buffer_index) {
+		string = realloc(string, string_index + 1);
+	}
+
 	return string;
 }
-
-// TODO: Choice of lazy evaluation and upfront (during parsing) evaluation (if possible).
 
