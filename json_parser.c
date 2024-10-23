@@ -1,20 +1,7 @@
-// TODO: Maybe later add the ability to continue parsing even when the error is encountered by
-//       assuming that the last token was invalid and finding first valid token. This way, we
-//       can give information about more than one error (if there is more than one), instead
-//       of just one. This can easily be implemented by just returning error tokens when
-//       there is an error, and continuing tokenization from there.
-
-// TODO: First, parsing will be done with lazy evaluation, so that the value of some node is
-//       calculated only when user requests it. Later also add immediate evaluation during parsing
-//       just that all nodes have ready value when is is requested.
-
-// TODO: One thing to keep in mind is that tokenization buffers that holds token bytes are just
-//       pointers with attached size that point somewhere in json bytes. This leads to undefined
-//       behaviour if json bytes somehow become invalid memory. It is faster, but requires this
-//       knowledge. Consider adding the option where tokenization buffers are explicitly allocated.
-// TODO: Using existing escape characters resolution to handle escape characters in labels.
-// TODO: Choice of lazy evaluation and upfront (during parsing) evaluation (if possible).
-
+// TODO(stekap) [+++]: Maybe arena allocator.
+// TODO(stekap) [+  ]: Maybe separate source buffer.
+// TODO(stekap) [+  ]: Maybe add choice of upfront evaluation.
+// TODO(stekap) [-  ]: Maybe add label string escape evaluation.
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -23,7 +10,7 @@
 
 #define MAX_BYTE_VALUE 255
 
-// TODO: Remove later.
+// TODO(stekap): Remove later.
 #include <assert.h>
 #define NOT_YET_IMPLEMENTED(msg) assert(!msg)
 
@@ -82,9 +69,8 @@ b32 is_in_bounds(Buffer buffer, u64 index) {
 	return (index < buffer.size);
 }
 
-// TODO: Maybe change allocation to use arena for whole JSON tree.
 JSON_Node* new_json_node() {
-	return calloc(1, sizeof(JSON_Node));
+	return JSON_CALLOC(1, sizeof(JSON_Node));
 }
 
 b32 is_json_white_space(u8 c) {
@@ -297,8 +283,8 @@ JSON_Token JSON_next_token(JSON_Parser* parser) {
 
 void attach_child_node(JSON_Node* parent, JSON_Node* child) {
 	if(parent->first_child) {
-		// TODO: Consider adding pointer to the last child in JSON_Node, so that adding
-		//       becomes O(1).
+		// TODO(stekap): Consider adding pointer to the last child in JSON_Node, so that adding
+		//               becomes O(1).
 		
 		JSON_Node* it = parent->first_child;
 		while(it->next_sibling != 0) {
@@ -499,14 +485,14 @@ bool JSON_node_is_null(JSON_Node* node) {
 			node->value.data[3] == 'l');
 }
 
-// TODO: Write custom atof for Buffer type (that would avoid string allocation).
+// TODO(stekap): Write custom atof for Buffer type (that would avoid string allocation).
 f64 JSON_node_to_number(JSON_Node* node) {
 	if(node == 0 || node->value.data == 0 || node->value.size == 0) {
 		return 0;
 	}
 
 	// This is done to not alter source bytes (keeping them always constant).
-	char* string = malloc(node->value.size + 1);
+	char* string = JSON_MALLOC(node->value.size + 1);
 	for(u64 i = 0; i < node->value.size; ++i) {
 		string[i] = node->value.data[i];
 	}
@@ -542,7 +528,7 @@ char* JSON_node_to_new_string(JSON_Node* node) {
 		return 0;
 	}
 	
-	char* string = malloc(node->value.size + 1);
+	char* string = JSON_MALLOC(node->value.size + 1);
 	u64 i;
 	for(i = 0; i < node->value.size; ++i) {
 		string[i] = node->value.data[i];
@@ -556,7 +542,7 @@ char* JSON_node_to_new_string_resolved(JSON_Node* node) {
 		return 0;
 	}
 
-	char* string = malloc(node->value.size + 1);
+	char* string = JSON_MALLOC(node->value.size + 1);
 	
 	u64 buffer_index = 0;
 	u64 string_index = 0;
@@ -610,7 +596,7 @@ char* JSON_node_to_new_string_resolved(JSON_Node* node) {
 	string[string_index] = 0;
 
 	if(string_index != buffer_index) {
-		string = realloc(string, string_index + 1);
+		string = JSON_REALLOC(string, string_index + 1);
 	}
 
 	return string;

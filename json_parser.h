@@ -59,12 +59,17 @@ struct JSON_Parser {
 
 typedef struct JSON_Node JSON_Node;
 struct JSON_Node {
-	// TODO: This could change a bit with immediate evaluation.
 	Buffer label;
 	Buffer value;
 	JSON_Node* first_child;
 	JSON_Node* next_sibling;
 };
+
+#if !defined(JSON_MALLOC) || !defined(JSON_CALLOC) || !defined(JSON_REALLOC)
+#define JSON_MALLOC  malloc
+#define JSON_CALLOC  calloc
+#define JSON_REALLOC realloc
+#endif
 
 #define foreach_child(node, iterator) for(JSON_Node* iterator = (JSON_Node*)node->first_child; iterator; iterator = (JSON_Node*)iterator->next_sibling)
 #define foreach_sibling(node, iterator) for(JSON_Node* iterator = (JSON_Node*)node; iterator; iterator = (JSON_Node*)iterator->next_sibling)
@@ -74,12 +79,13 @@ void print_token_type(JSON_Token_Type type);
 void print_json_tree_structure(JSON_Node* root, u32 depth);
 #endif
 
-JSON_Node* JSON_parse(u8* data, u64 size);
-void JSON_free_node_subtrees(JSON_Node* node);
-void JSON_free(JSON_Node* node);
-JSON_Node* JSON_find(JSON_Node* node, char* label);
-JSON_Node* JSON_find_sibling(JSON_Node* node, char* label);
-JSON_Node* JSON_find_child(JSON_Node* node, char* label);
+JSON_Node*	JSON_parse(u8* data, u64 size);
+void		JSON_free_node_subtrees(JSON_Node* node);
+void		JSON_free(JSON_Node* node);
+
+JSON_Node*	JSON_find(JSON_Node* node, char* label);
+JSON_Node*	JSON_find_sibling(JSON_Node* node, char* label);
+JSON_Node*	JSON_find_child(JSON_Node* node, char* label);
 
 bool	JSON_node_is_null(JSON_Node* node);
 f64		JSON_node_to_number(JSON_Node* node);
