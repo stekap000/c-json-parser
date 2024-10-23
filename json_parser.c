@@ -67,10 +67,10 @@ void print_json_tree_structure(JSON_Node* root, u32 depth) {
 		printf("\n");
 		
 		if(root->first_child) {
-			print_json_tree_structure((JSON_Node*)root->first_child, depth + 1);
+			print_json_tree_structure(root->first_child, depth + 1);
 		}
 
-		root = (JSON_Node*)root->next_sibling;
+		root = root->next_sibling;
 	}
 }
 #endif
@@ -297,9 +297,9 @@ void attach_child_node(JSON_Node* parent, JSON_Node* child) {
 		// TODO: Consider adding pointer to the last child in JSON_Node, so that adding
 		//       becomes O(1).
 		
-		JSON_Node* it = (JSON_Node*)parent->first_child;
+		JSON_Node* it = parent->first_child;
 		while(it->next_sibling != 0) {
-			it = (JSON_Node*)it->next_sibling;
+			it = it->next_sibling;
 		}
 		it->next_sibling = (struct JSON_Node*)child;
 	}
@@ -414,8 +414,8 @@ void JSON_free_node_subtrees(JSON_Node* node) {
 		return;
 	}
 
-	JSON_free_node_subtrees((JSON_Node*)node->first_child);
-	JSON_free_node_subtrees((JSON_Node*)node->next_sibling);
+	JSON_free_node_subtrees(node->first_child);
+	JSON_free_node_subtrees(node->next_sibling);
 
 	free(node->first_child);
 	free(node->next_sibling);
@@ -454,7 +454,7 @@ JSON_Node* JSON_find(JSON_Node* node, char* label) {
 			return current_node;
 		}
 
-		JSON_Node* temp = JSON_find((JSON_Node*)current_node->first_child, label);
+		JSON_Node* temp = JSON_find(current_node->first_child, label);
 		if(temp) {
 			return temp;
 		}
@@ -482,7 +482,7 @@ JSON_Node* JSON_find_child(JSON_Node* node, char* label) {
 		return 0;
 	}
 
-	return JSON_find_sibling((JSON_Node*)node->first_child, label);
+	return JSON_find_sibling(node->first_child, label);
 }
 
 bool JSON_node_is_null(JSON_Node* node) {

@@ -18,12 +18,14 @@ typedef double f64;
 
 typedef unsigned int b32;
 
-typedef struct buffer {
+typedef struct Buffer Buffer;
+struct Buffer {
 	u64 size;
 	u8* data;
-} Buffer;
+};
 
-typedef enum token_type {
+typedef enum JSON_Token_Type JSON_Token_Type;
+enum JSON_Token_Type {
 	Token_Number,
 	Token_String,
 	Token_True,
@@ -40,26 +42,29 @@ typedef enum token_type {
 	Token_End_Of_Stream,
 	
 	Token_Count
-} JSON_Token_Type;
+};
 
-typedef struct json_token {
+typedef struct JSON_Token JSON_Token;
+struct JSON_Token {
 	JSON_Token_Type type;
 	Buffer value;
-} JSON_Token;
+};
 
-typedef struct {
+typedef struct JSON_Parser JSON_Parser;
+struct JSON_Parser {
 	Buffer source;
 	u64 at;
 	u32 error_encountered;
-} JSON_Parser;
+};
 
-typedef struct {
+typedef struct JSON_Node JSON_Node;
+struct JSON_Node {
 	// TODO: This could change a bit with immediate evaluation.
 	Buffer label;
 	Buffer value;
-	struct JSON_Node* first_child;
-	struct JSON_Node* next_sibling;
-} JSON_Node;
+	JSON_Node* first_child;
+	JSON_Node* next_sibling;
+};
 
 #define foreach_child(node, iterator) for(JSON_Node* iterator = (JSON_Node*)node->first_child; iterator; iterator = (JSON_Node*)iterator->next_sibling)
 #define foreach_sibling(node, iterator) for(JSON_Node* iterator = (JSON_Node*)node; iterator; iterator = (JSON_Node*)iterator->next_sibling)
